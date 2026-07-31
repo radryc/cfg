@@ -7,7 +7,7 @@ import (
 "fmt"
 "io/fs"
 
-"github.com/rydzu/ainfra/kvs/pkg/kvsapi"
+"github.com/radryc/kvs/pkg/kvsapi"
 )
 
 // loadIndex reads and unmarshals the VersionIndex for product from KVS.

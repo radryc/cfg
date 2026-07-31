@@ -1,4 +1,4 @@
-module github.com/rydzu/ainfra/cfg
+module github.com/radryc/cfg
 
 go 1.26.4
 
@@ -7,8 +7,8 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.41.4
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.97.1
 	github.com/google/uuid v1.6.0
+	github.com/radryc/kvs v0.0.0
 	github.com/radryc/packager v0.0.0-20260314073213-ebce590b0ca7
-	github.com/rydzu/ainfra/kvs v0.0.0
 )
 
 require (
@@ -77,4 +77,4 @@ require (
 	google.golang.org/protobuf v1.36.11 // indirect
 )
 
-replace github.com/rydzu/ainfra/kvs => ../kvs
+replace github.com/radryc/kvs => ../kvs

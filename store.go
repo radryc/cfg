@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rydzu/ainfra/kvs/pkg/kvsapi"
+	"github.com/radryc/kvs/pkg/kvsapi"
 )
 
 const (
