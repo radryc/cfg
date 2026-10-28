@@ -1,0 +1,33 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: cfg
+      - uses: actions/checkout@v7
+        with:
+          repository: radryc/kvs
+          path: kvs
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: cfg/go.mod
+          cache-dependency-path: cfg/go.sum
+      - name: Run tests
+        working-directory: cfg
+        run: go test ./...
