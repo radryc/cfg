@@ -1,6 +1,19 @@
 package cfg
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
+
+const (
+	// encryptionKeySize is the ChaCha20-Poly1305 key length required by the
+	// packager pipeline.
+	encryptionKeySize = 32
+	// minDistinctKeyBytes rejects trivially weak keys (all-zero, repeated
+	// single-byte, short repeated patterns) while accepting any realistically
+	// random key, which has roughly 30 distinct byte values.
+	minDistinctKeyBytes = 8
+)
 
 // StorageType selects where packager archives are persisted.
 type StorageType string
@@ -26,7 +39,9 @@ type Config struct {
 	// Required when StorageType is "local" or as a local cache for cloud storage.
 	ArchiveDir string
 
-	// EncryptionKey is a 32-byte ChaCha20-Poly1305 key used for packager archives.
+	// EncryptionKey is the 32-byte key used to encrypt packager archives.
+	// It must be cryptographically random; missing, wrong-length, all-zero,
+	// and trivially weak keys are rejected at startup.
 	EncryptionKey []byte
 
 	// Storage selects where packager archives are persisted.
@@ -66,6 +81,37 @@ type StorageConfig struct {
 	// GCSCredentialsJSON is inline service account JSON key content.
 	// Takes precedence over GCSCredentialsFile.
 	GCSCredentialsJSON []byte
+}
+
+// validateEncryptionKey rejects missing, wrongly sized, and trivially weak
+// archive encryption keys at startup.
+func validateEncryptionKey(key []byte) error {
+	if len(key) == 0 {
+		return fmt.Errorf("cfg: EncryptionKey is required (exactly %d random bytes)", encryptionKeySize)
+	}
+	if len(key) != encryptionKeySize {
+		return fmt.Errorf("cfg: EncryptionKey must be exactly %d bytes, got %d", encryptionKeySize, len(key))
+	}
+
+	var seen [256]bool
+	distinct := 0
+	allZero := true
+	for _, b := range key {
+		if !seen[b] {
+			seen[b] = true
+			distinct++
+		}
+		if b != 0 {
+			allZero = false
+		}
+	}
+	if allZero {
+		return fmt.Errorf("cfg: EncryptionKey must not be all zero bytes")
+	}
+	if distinct < minDistinctKeyBytes {
+		return fmt.Errorf("cfg: EncryptionKey is too weak (%d distinct byte values, need at least %d); use a cryptographically random key", distinct, minDistinctKeyBytes)
+	}
+	return nil
 }
 
 func (c *Config) maxHotVersions() int {

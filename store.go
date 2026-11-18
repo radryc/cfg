@@ -43,7 +43,8 @@ type CfgStore struct {
 // New creates a CfgStore backed by kvs.
 //
 // config.ArchiveDir must be writable when StorageType is "local".
-// config.EncryptionKey must be exactly 32 bytes.
+// config.EncryptionKey must be exactly 32 cryptographically random bytes;
+// missing, all-zero, and trivially weak keys are rejected.
 func New(ctx context.Context, kvs kvsapi.Store, config Config) (*CfgStore, error) {
 	if kvs == nil {
 		return nil, fmt.Errorf("cfg: kvs store must not be nil")
