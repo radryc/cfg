@@ -114,7 +114,9 @@ repository is routed to the cfg backend when its `storage_backend` field is
 func New(ctx context.Context, kvs kvsapi.Store, config Config) (*CfgStore, error)
 ```
 
-`kvs` must be non-nil and `config.EncryptionKey` must be exactly 32 bytes.
+`kvs` must be non-nil and `config.EncryptionKey` must be exactly 32
+cryptographically random bytes. Missing, all-zero, repeated-byte, and other
+trivially weak keys are rejected at startup; archives are always encrypted.
 
 | Method | Purpose |
 | --- | --- |
@@ -136,7 +138,7 @@ KVS passthrough methods are also available: `UpsertFiles`, `DeletePaths`,
 | `RootPrefix` | `/cfg` | Leading slash, no trailing slash |
 | `MaxHotVersions` | `5` | Values `<= 0` fall back to 5 |
 | `ArchiveDir` | none | Required for local archives; also the local build directory for cloud uploads |
-| `EncryptionKey` | none | Required, exactly 32 bytes |
+| `EncryptionKey` | none | Required, exactly 32 random bytes; weak keys are rejected |
 | `Storage.Type` | `local` | `local`, `s3`, or `gcs` |
 
 S3 options: `S3Region`, `S3Bucket` (required), `S3Prefix`, `S3Endpoint`,
