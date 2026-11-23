@@ -4,8 +4,9 @@
 versions of a product's configuration in KVS (the hot tier) and moves older
 versions into encrypted packager archives (the cold tier).
 
-The package is consumed by MonoFS and Guardian for versioned configuration
-distribution. Any `kvsapi.Store` can back the hot tier, and archives can live
+The package is consumed by the MonoFS server for versioned configuration
+distribution; Guardian reads versioned state through MonoFS rather than importing
+`cfg` directly. Any `kvsapi.Store` can back the hot tier, and archives can live
 locally, on S3, or on Google Cloud Storage.
 
 ## Architecture
@@ -60,7 +61,8 @@ A product has an ordered list of versions, newest first, stored in the
 `/{root}/{product}/{sha}/{file}` and the per-version manifest to
 `/{root}/{product}/manifests/{sha}` in one KVS mutation batch. It then registers
 the version in `_index` through a compare-and-swap loop, retrying on
-`kvsapi.ErrConflict`; re-pushing an existing SHA is a no-op for the index.
+`kvsapi.ErrConflict`; re-pushing an existing SHA is a no-op for the index
+(its KVS files and manifest are still rewritten).
 Finally it calls `Compact`; compaction failures do not fail the push.
 
 ### Current pointer
@@ -126,7 +128,7 @@ trivially weak keys are rejected at startup; archives are always encrypted.
 | `Compact` | Archive excess hot versions |
 | `ReadFile` / `ListDir` / `Stat` | Read hot or cold paths, resolving `current` |
 | `Watch` | Delegate watches to the underlying KVS |
-| `Close` | Release store resources |
+| `Close` | No-op; retained for interface compatibility |
 
 KVS passthrough methods are also available: `UpsertFiles`, `DeletePaths`,
 `ListVersions`, and `GetVersion`; prefer `PushVersion`/`SetCurrent`.
@@ -135,9 +137,9 @@ KVS passthrough methods are also available: `UpsertFiles`, `DeletePaths`,
 
 | Field | Default | Notes |
 | --- | --- | --- |
-| `RootPrefix` | `/cfg` | Leading slash, no trailing slash |
+| `RootPrefix` | `/cfg` | Normalized to a leading slash and no trailing slash |
 | `MaxHotVersions` | `5` | Values `<= 0` fall back to 5 |
-| `ArchiveDir` | none | Required for local archives; also the local build directory for cloud uploads |
+| `ArchiveDir` | none | Local archive root and build directory for cloud uploads; empty writes relative to the process CWD |
 | `EncryptionKey` | none | Required, exactly 32 random bytes; weak keys are rejected |
 | `Storage.Type` | `local` | `local`, `s3`, or `gcs` |
 
